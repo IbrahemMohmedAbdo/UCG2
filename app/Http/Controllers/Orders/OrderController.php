@@ -20,18 +20,18 @@ use App\Http\Resources\StatusOrderResource;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use App\Services\ThirdPartyApiService;
+use Illuminate\Pagination\LengthAwarePaginator;
+
 
 class OrderController extends Controller
 {
-
- public function getOrders(Request $request)
+    public function getOrders(Request $request)
     {
         $user = auth()->user();
 
         // Fetch orders from the third-party API
         $thirdPartyApiResult = $this->fetchOrdersFromThirdPartyApi($user);
-        $thirdPartyApiResult2= $this->fetchArchivedOrdersFromThirdPartyApi($user);
-        // If you need to process the third-party API result, do it here
+     //   $thirdPartyApiResult2 = $this->fetchArchivedOrdersFromThirdPartyApi($user);
 
         // Build local orders query
         $ordersQuery = $this->buildLocalOrdersQuery($user, $request);
@@ -39,12 +39,17 @@ class OrderController extends Controller
         // Apply filters to the local orders query
         $this->applyFiltersToOrdersQuery($ordersQuery, $user, $request);
 
-        // Retrieve orders from the local database
-        $orders = $ordersQuery->get();
+        // Paginate the local orders
+        $perPage = $request->input('per_page', 5); // Adjust the per_page value as needed
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+
+        // Retrieve orders from the local database with pagination
+        $orders = $ordersQuery->paginate($perPage, ['*'], 'page', $currentPage);
 
         // Return API response
         return $this->prepareApiResponse($orders);
     }
+
 
     protected function fetchOrdersFromThirdPartyApi($user)
     {
@@ -57,17 +62,17 @@ class OrderController extends Controller
         $apiService = new ThirdPartyApiService($authInfo);
         return $apiService->getOrders();
     }
-    protected function fetchArchivedOrdersFromThirdPartyApi($user)
-    {
-        $authInfo = [
-            'username' => $user->shipping_username,
-            'password' => $user->shipping_password,
-            'type' => 'Authorization',
-        ];
+    // protected function fetchArchivedOrdersFromThirdPartyApi($user)
+    // {
+    //     $authInfo = [
+    //         'username' => $user->shipping_username,
+    //         'password' => $user->shipping_password,
+    //         'type' => 'Authorization',
+    //     ];
 
-        $apiService = new ThirdPartyApiService($authInfo);
-        return $apiService->getArchivedOrders();
-    }
+    //     $apiService = new ThirdPartyApiService($authInfo);
+    //     return $apiService->getArchivedOrders();
+    // }
 
 
 
@@ -111,7 +116,15 @@ class OrderController extends Controller
             return (new ApiResponse(200, __('Orders not found for the authenticated user.'), ['orders' => []]))->send();
         }
 
-        return (new ApiResponse(200, __('List of orders for the authenticated user'), ['orders' => OneOrderResource::collection($orders)]))->send();
+        return (new ApiResponse(200, __('List of orders for the authenticated user'), [
+            'orders' => OneOrderResource::collection($orders),
+            'pagination' => [
+                'total' => $orders->total(),
+                'per_page' => $orders->perPage(),
+                'current_page' => $orders->currentPage(),
+                'last_page' => $orders->lastPage(),
+            ],
+        ]))->send();
     }
 
 
@@ -498,9 +511,8 @@ $quantities = $order->products()->pluck('order_product.quantity')->unique()->val
 
 $order->products->each(function ($product, $index) use ($quantities) {
 	\Storage::put('line517'.$index.'.json', json_encode($product));
-\Storage::put('line518'.$index.'.json', json_encode($quantities));
     $quantityToAdd = $quantities[$index] ?? 0;
-\Storage::put('line520'.$index.'.json', json_encode($quantityToAdd));
+
 
     //$product->variations->each(function ($variation) use ($quantityToAdd) {
 //        $pivot = $variation->pivot;

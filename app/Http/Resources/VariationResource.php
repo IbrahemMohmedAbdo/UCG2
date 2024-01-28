@@ -4,7 +4,6 @@ namespace App\Http\Resources;
 
 use App\Models\Color;
 use App\Models\Size;
-use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class VariationResource extends JsonResource
@@ -14,78 +13,42 @@ class VariationResource extends JsonResource
      *
      * @return array<string, mixed>
      */
-public function toArray($request)
-{
-
-    $colorId = $this->pivot->color_id;
-    $productId = $this->pivot->product_id;
-	$sizeId =Size::find($this->pivot->size_id);
-	$sizeName = $sizeId->name;
-  
-    $variations = $this->variations()
-        ->where('color_id', $colorId)
-        ->where('product_id', $productId)
-        ->get();
-
-    $colorValue = $this->colorValue() ?? null;
-    $colorName = $this->colorName() ?? null;
-
-    $details = $variations->map(function ($variation) {
-		$size = Size::find($variation->pivot->size_id);
+    public function toArray($request)
+    {
         return [
-            'size_id' => $variation->pivot->size_id,
-            'size_name' => $size->name ?? null,
-            'quantity' => $variation->pivot->quantity,
-            'image_path' => $this->pivot->image_path,
-            
+            'color_id' => $this->color_id,
+            'color_value' => $this->colorValue(),
+            'color_name' => $this->colorName(),
+            'details' => $this->mapDetails(),
         ];
-    });
-	if(!$variations)
-	{
-	
-	return [];
-		
-	}else{
-		    return [
-        'color_id' => $colorId ?? null,
-        'color_value' => $colorValue,
-        'color_name' => $colorName,
-        'details' => $details,
-    ];
-		
-	}
-	
-	
+    }
 
-
-}
-
-
-	
     protected function colorValue()
-{
-    $color =Color::find($this->pivot->color_id);
-    $colorValue=$color->value;
-    return $colorValue;
-}
+    {
+        $color = Color::find($this->color_id);
+        return optional($color)->value;
+    }
 
-protected function colorName()
-{
- $color =Color::find($this->pivot->color_id);
-    $colorName=$color->name ?? null;
-    return $colorName;
-}
+    protected function colorName()
+    {
+        $color = Color::find($this->color_id);
+        return optional($color)->name;
+    }
 
-protected function sizeName()
-{
-$size =Size::find($this->pivot->size_id);
-$sizeName = $size->name ?? null;
-return $sizeName;
-}
+    protected function mapDetails()
+    {
+
+            $sizeId = $this->size_id;
+            $size = Size::find($sizeId);
+
+            return [
+                'size_id' => $sizeId,
+                'size_name' => optional($size)->name,
+                'quantity' => $this->quantity,
+                'image_path' => $this->image_path,
+            ];
 
 
-	
-
-
-
+        return null;
+    }
 }

@@ -36,14 +36,14 @@ foreach ($this->variations as $cc) {
 
             'id' => $this->id ?? 'not-found',
           'videos' => $this->media->filename ?? null ? asset('images/' . $this->media->filename) : null,
-         
+
             'name' => $this->name ?? 'not-found',
             'brand' => $this->brand ?? 'not-found',
 			'price'=>$this->price ?? null,
 			'original_price'=>$this->original_price ?? null,
             'category_name' => $this->category->name ?? 'not-found',
 			'status'=>$this->status,
-				
+
 			'date'=>$this->date ?? null,
 			'created_at'=>$this->created_at,
 			  /* 'variations' => $this->variations->map(function ($variation) {
@@ -54,10 +54,10 @@ foreach ($this->variations as $cc) {
                         'quantity' => $variation->pivot->quantity,
                     ];
                 }),*/
-			
+
           'variations' => VariationResource::collection($pp),
-			
-         
+
+
 
         ];
     }
@@ -65,8 +65,8 @@ foreach ($this->variations as $cc) {
     {
         return VariationResource::collection($this->variations);
     }
-	
-	
+
+
     protected function getColorNameByColorId($colorId)
     {
         $color = Color::find($colorId);

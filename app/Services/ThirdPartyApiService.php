@@ -59,78 +59,87 @@ class ThirdPartyApiService
     }
 
 
+
+
     // public function getOrders()
     // {
-
-
     //     if (!$this->status) {
-    //         // Handle the case where authentication failed
     //         return ['error' => 'Authentication failed'];
     //     }
 
     //     try {
     //         $responseOrders = $this->sendApiRequest('get', 'https://api.sabil.ly/v2/orders/' . $this->username . '/');
-    //       //  https://api.sabil.ly/v2/orders/archived/:userId/
-    //         $responseOrdersArchived = $this->sendApiRequest('get', ' https://api.sabil.ly/v2/orders/archived/' . $this->username . '/');
+    //         $responseArchivedOrders = $this->sendApiRequest('get', 'https://api.sabil.ly/v2/orders/archived/' . $this->username . '/');
 
-    //         $responseData1 = $this->handleApiResponse($responseOrders);
-    //         $responseData2 = $this->handleApiResponse($responseOrdersArchived);
-    //         $this->updateLocalOrderStatuses($responseData1);
-    //         return $responseData1;
+
+    //         $responseData = array_merge(
+    //             $this->handleApiResponse($responseOrders['data']['results']),
+    //              $this->handleApiResponse($responseArchivedOrders['data']['results'])
+    //         );
+
+
+
+    //         $this->updateLocalOrderStatuses($responseData);
+
+    //         return $responseData;
     //     } catch (\Exception $e) {
+    //         return ['error' => $e->getMessage()];
+    //     }
+    // }
+    // public function getArchivedOrders()
+    // {
+    //     if (!$this->status) {
+    //         return ['error' => 'Authentication failed'];
+    //     }
 
-    //         // Log or handle the API request error
+    //     try {
+
+    //         $responseArchivedOrders = $this->sendApiRequest('get', 'https://api.sabil.ly/v2/orders/archived/' . $this->username . '/');
+
+
+    //         $responseData = $this->handleApiResponse($responseArchivedOrders);
+
+
+    //     $this->updateLocalOrderStatuses($responseData);
+
+
+    //         return $responseData;
+    //     } catch (\Exception $e) {
     //         return ['error' => $e->getMessage()];
     //     }
     // }
 
+
+
     public function getOrders()
-    {
-        if (!$this->status) {
-            return ['error' => 'Authentication failed'];
-        }
-
-        try {
-            $responseOrders = $this->sendApiRequest('get', 'https://api.sabil.ly/v2/orders/' . $this->username . '/');
-            $responseArchivedOrders = $this->sendApiRequest('get', 'https://api.sabil.ly/v2/orders/archived/' . $this->username . '/');
-
-
-            $responseData = array_merge(
-                $this->handleApiResponse($responseOrders['data']['results']),
-                 $this->handleApiResponse($responseArchivedOrders['data']['results'])
-            );
-
-
-
-            $this->updateLocalOrderStatuses($responseData);
-
-            return $responseData;
-        } catch (\Exception $e) {
-            return ['error' => $e->getMessage()];
-        }
+{
+    if (!$this->status) {
+        return ['error' => 'Authentication failed'];
     }
-    public function getArchivedOrders()
-    {
-        if (!$this->status) {
-            return ['error' => 'Authentication failed'];
-        }
 
-        try {
+    try {
+        $response = $this->sendApiRequest('get', 'https://api.sabil.ly/v2/orders/' . $this->username . '/');
+        $responseData = $this->handleApiResponse($response['data']['results']);
 
-            $responseArchivedOrders = $this->sendApiRequest('get', 'https://api.sabil.ly/v2/orders/archived/' . $this->username . '/');
+        $archivedResponse = $this->sendApiRequest('get', 'https://api.sabil.ly/v2/orders/archived/' . $this->username . '/');
+        $archivedOrdersData = $this->handleApiResponse($archivedResponse['data']['results']);
 
-
-            $responseData = $this->handleApiResponse($responseArchivedOrders);
-
+        // Merge the results with archived orders appended
+        $responseData = array_merge($responseData, $archivedOrdersData);
 
         $this->updateLocalOrderStatuses($responseData);
 
-
-            return $responseData;
-        } catch (\Exception $e) {
-            return ['error' => $e->getMessage()];
-        }
+        return $responseData;
+    } catch (\Exception $e) {
+        return ['error' => $e->getMessage()];
     }
+}
+
+
+
+
+
+
 
 
 

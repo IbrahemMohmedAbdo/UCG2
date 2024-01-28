@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Response\ApiResponse;
 use App\Services\FileService;
 use App\Services\MediaService;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Resources\ProductResource;
@@ -189,28 +190,34 @@ protected function addOrUpdateVariationsAndMedia($product, $validatedData, $requ
 
 
 }
-
 protected function updateProductVariations($product, $validatedData)
 {
-    $product->variations()->detach();
+    if (array_key_exists('colors', $validatedData)) {
+        foreach ($validatedData['colors'] as $colorData) {
+            $colorId = $colorData['colorId'];
+            $sizeId = $colorData['sizeId'];
+            $quantity = $colorData['quantity'];
+            $image = $colorData['images'];
 
-    foreach ($validatedData['colors'] as $colorData) {
-        $colorId = $colorData['colorId'];
-        $sizeId = $colorData['sizeId'];
-        $quantity = $colorData['quantity'];
-        $image = $colorData['images'];
+            // Upload the image and get the path
+            $imagePath = $this->updateImage($image);
 
-        // Upload the image and get the path
-        $imagePath = $this->updateImage($image);
+            // Find or create the variation based on colorId and sizeId
+            $variation = $product->variations()->firstOrNew([
+                'color_id' => $colorId,
+                'size_id' => $sizeId,
+            ]);
 
-        // Attach the variation with the image path
-        $product->variations()->attach($colorId, [
-            'size_id' => $sizeId,
-            'quantity' => $quantity,
-            'image_path' => $imagePath,
-        ]);
-    }
+            // Update the variation attributes
+            $variation->quantity = $quantity;
+            $variation->image_path = $imagePath;
+
+            // Save the variation
+            $variation->save();
+        }
+    } 
 }
+
 
 private function updateImage($image, $existingFilename = null, $removeExisting = false)
 {
