@@ -21,7 +21,7 @@ foreach ($this->variations as $cc) {
     $colorIdExists = false;
 
     foreach ($pp as $ff) {
-        if ($cc->pivot->color_id == $ff->pivot->color_id) {
+        if ($cc->color_id == $ff->color_id) {
             $colorIdExists = true;
             break; // Exit the inner loop once a match is found
         }
@@ -46,14 +46,7 @@ foreach ($this->variations as $cc) {
 
 			'date'=>$this->date ?? null,
 			'created_at'=>$this->created_at,
-			  /* 'variations' => $this->variations->map(function ($variation) {
-
-                    return [
-                        'size' => $variation->name, // Assuming 'name' is the attribute in your Size model
-                        'color' => $this->getColorNameByColorId($variation->pivot->color_id),
-                        'quantity' => $variation->pivot->quantity,
-                    ];
-                }),*/
+	
 
           'variations' => VariationResource::collection($pp),
 

@@ -215,7 +215,7 @@ protected function updateProductVariations($product, $validatedData)
             // Save the variation
             $variation->save();
         }
-    } 
+    }
 }
 
 
