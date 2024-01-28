@@ -2,11 +2,10 @@
 namespace App\Services;
 
 
-use App\Models\User;
 use App\Models\Order;
+use App\Models\User;
 use App\Models\Wallet;
 use Illuminate\Support\Facades\Http;
-
 class ThirdPartyApiService
 {
     private $baseUrl = 'https://api.sabil.ly/v1/user/access/';
@@ -59,91 +58,56 @@ class ThirdPartyApiService
     }
 
 
-
-
-    // public function getOrders()
-    // {
-    //     if (!$this->status) {
-    //         return ['error' => 'Authentication failed'];
-    //     }
-
-    //     try {
-    //         $responseOrders = $this->sendApiRequest('get', 'https://api.sabil.ly/v2/orders/' . $this->username . '/');
-    //         $responseArchivedOrders = $this->sendApiRequest('get', 'https://api.sabil.ly/v2/orders/archived/' . $this->username . '/');
-
-
-    //         $responseData = array_merge(
-    //             $this->handleApiResponse($responseOrders['data']['results']),
-    //              $this->handleApiResponse($responseArchivedOrders['data']['results'])
-    //         );
-
-
-
-    //         $this->updateLocalOrderStatuses($responseData);
-
-    //         return $responseData;
-    //     } catch (\Exception $e) {
-    //         return ['error' => $e->getMessage()];
-    //     }
-    // }
-    // public function getArchivedOrders()
-    // {
-    //     if (!$this->status) {
-    //         return ['error' => 'Authentication failed'];
-    //     }
-
-    //     try {
-
-    //         $responseArchivedOrders = $this->sendApiRequest('get', 'https://api.sabil.ly/v2/orders/archived/' . $this->username . '/');
-
-
-    //         $responseData = $this->handleApiResponse($responseArchivedOrders);
-
-
-    //     $this->updateLocalOrderStatuses($responseData);
-
-
-    //         return $responseData;
-    //     } catch (\Exception $e) {
-    //         return ['error' => $e->getMessage()];
-    //     }
-    // }
-
-
-
     public function getOrders()
-{
-    if (!$this->status) {
-        return ['error' => 'Authentication failed'];
+    {
+
+
+        if (!$this->status) {
+            // Handle the case where authentication failed
+            return ['error' => 'Authentication failed'];
+        }
+
+        try {
+            $responseOrders = $this->sendApiRequest('get', 'https://api.sabil.ly/v2/orders/' . $this->username . '/');
+
+            $responseData = $this->handleApiResponse($responseOrders);
+
+
+            $this->updateLocalOrderStatuses($responseData);
+            return $responseData;
+        } catch (\Exception $e) {
+
+            // Log or handle the API request error
+            return ['error' => $e->getMessage()];
+        }
     }
 
-    try {
-        $response = $this->sendApiRequest('get', 'https://api.sabil.ly/v2/orders/' . $this->username . '/');
-        $responseData = $this->handleApiResponse($response['data']['results']);
 
-        $archivedResponse = $this->sendApiRequest('get', 'https://api.sabil.ly/v2/orders/archived/' . $this->username . '/');
-        $archivedOrdersData = $this->handleApiResponse($archivedResponse['data']['results']);
+     public function getArchivedOrders()
+    {
+        if (!$this->status) {
+            return ['error' => 'Authentication failed'];
+        }
 
-        // Merge the results with archived orders appended
-        $responseData = array_merge($responseData, $archivedOrdersData);
+        try {
+
+            $responseArchivedOrders = $this->sendApiRequest('get', 'https://api.sabil.ly/v2/orders/archived/' . $this->username . '/');
+
+
+            $responseData = $this->handleApiResponse($responseArchivedOrders);
+
+
 
         $this->updateLocalOrderStatuses($responseData);
 
-        return $responseData;
-    } catch (\Exception $e) {
-        return ['error' => $e->getMessage()];
+            return $responseData;
+        } catch (\Exception $e) {
+            return ['error' => $e->getMessage()];
+        }
     }
-}
 
 
-
-
-
-
-
-
-
-    public function trackOrder($orderId)
+  public function trackOrder($orderId)
     {
         if (!$this->status) {
             return ['error' => 'Authentication failed'];
@@ -152,7 +116,7 @@ class ThirdPartyApiService
         try {
             $responseTimeline = $this->sendApiRequest('get', 'https://api.sabil.ly/v2/timelines/' . $orderId . '/');
             $responseData = $this->handleApiResponse($responseTimeline);
-            $this->updateLocalOrderStatuses($responseData);
+          $this->updateLocalOrderStatuses($responseData);
             // Additional logic for tracking orders if needed
 
             return $responseData;
@@ -162,13 +126,16 @@ class ThirdPartyApiService
         }
     }
 
+
+
+
     private function sendApiRequest($method, $url, $data = [])
     {
         $request = Http::withToken($this->token);
 
-        if ($method == 'post') {
+        if ($method === 'post') {
             $response = $request->asForm()->post($url, $data);
-        } elseif ($method == 'get') {
+        } elseif ($method === 'get') {
             $response = $request->get($url);
         } else {
             throw new \InvalidArgumentException('Unsupported HTTP method');
@@ -196,43 +163,48 @@ class ThirdPartyApiService
     }
 
 
-    protected function updateLocalOrderStatuses($responseData)
-    {
-        foreach ($responseData['data']['results'] as $apiOrder) {
-            $apiStatus = $apiOrder['status'];
-            $localOrder = Order::where('orderId_shipping', $apiOrder['orderId'])->first();
 
-            if ($localOrder && $localOrder->status != $apiStatus) {
-                if ($localOrder->is_completed_in_api == 0 && $apiStatus == 'Completed') {
-                    $this->updateWalletsForCompletedOrder($localOrder);
-                    $localOrder->is_completed_in_api = 1;
-                }
+protected function updateLocalOrderStatuses($responseData)
+{
+    foreach ($responseData['data']['results'] as $apiOrder) {
+        $apiStatus = $apiOrder['status'];
+        $localOrder = Order::where('orderId_shipping', $apiOrder['orderId'])->first();
 
-                $localOrder->status = $apiStatus;
-                $localOrder->save();
+        if ($localOrder && $localOrder->status != $apiStatus) {
+            if ($localOrder->is_completed_in_api == 0 && $apiStatus == 'Completed') {
+                $this->updateWalletsForCompletedOrder($localOrder);
+                $localOrder->is_completed_in_api = 1;
             }
+
+            $localOrder->status = $apiStatus;
+            $localOrder->save();
         }
     }
+}
 
-    protected function updateWalletsForCompletedOrder($localOrder)
-    {
-        $represintative_id = $localOrder->representative_id;
+protected function updateWalletsForCompletedOrder($localOrder)
+{
+    $represintative_id = $localOrder->representative_id;
 
-        $represintativeCommission = User::where('id', $represintative_id)->first();
+    $represintativeCommission = User::where('id', $represintative_id)->first();
 
-        $totalPrice = $localOrder->products->sum(function ($product) {
-            return $product->pivot->total_price;
-        });
+    $totalPrice = $localOrder->products->sum(function ($product) {
+        return $product->pivot->total_price;
+    });
 
-        $represintativeWallet = Wallet::with('user')->where('user_id', $represintative_id)->first();
+    $represintativeWallet = Wallet::with('user')->where('user_id', $represintative_id)->first();
 
-        if ($represintativeCommission && $represintativeWallet) {
-            $currentCommission = $represintativeCommission->commission;
-            $currentBalance = $represintativeWallet->balance;
-            $newBalance = $currentBalance - $currentCommission;
-            $represintativeWallet->update(['balance' => $newBalance]);
-        }
+    if ($represintativeCommission && $represintativeWallet) {
+        $currentCommission = $represintativeCommission->commission;
+        $currentBalance = $represintativeWallet->balance;
+        $newBalance = $currentBalance - $currentCommission;
+        $represintativeWallet->update(['balance' => $newBalance]);
     }
+}
+
+
+
+
 
 
 

@@ -31,7 +31,7 @@ class OrderController extends Controller
 
         // Fetch orders from the third-party API
         $thirdPartyApiResult = $this->fetchOrdersFromThirdPartyApi($user);
-     //   $thirdPartyApiResult2 = $this->fetchArchivedOrdersFromThirdPartyApi($user);
+       $thirdPartyApiResult2 = $this->fetchArchivedOrdersFromThirdPartyApi($user);
 
         // Build local orders query
         $ordersQuery = $this->buildLocalOrdersQuery($user, $request);
@@ -62,17 +62,17 @@ class OrderController extends Controller
         $apiService = new ThirdPartyApiService($authInfo);
         return $apiService->getOrders();
     }
-    // protected function fetchArchivedOrdersFromThirdPartyApi($user)
-    // {
-    //     $authInfo = [
-    //         'username' => $user->shipping_username,
-    //         'password' => $user->shipping_password,
-    //         'type' => 'Authorization',
-    //     ];
+    protected function fetchArchivedOrdersFromThirdPartyApi($user)
+    {
+        $authInfo = [
+            'username' => $user->shipping_username,
+            'password' => $user->shipping_password,
+            'type' => 'Authorization',
+        ];
 
-    //     $apiService = new ThirdPartyApiService($authInfo);
-    //     return $apiService->getArchivedOrders();
-    // }
+        $apiService = new ThirdPartyApiService($authInfo);
+        return $apiService->getArchivedOrders();
+    }
 
 
 
