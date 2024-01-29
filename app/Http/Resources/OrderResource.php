@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -19,8 +20,11 @@ class OrderResource extends JsonResource
             'client_name'=>$this->client_name,
             'client_number'=>$this->client_number,
             'client_location'=>$this->client_location,
-			   'client_city'=>$this->client_City,
-             'representative_id'=>$this->representative_id,
+			'client_city'=>$this->client_City,
+            'representative_id'=>$this->representative_id,
+            'representative_Name'=>$this->getrepresentativeName() ?? null,
+            'store_manager_Name'=>$this->getstoreManagerName() ?? null,
+            'driver_Name'=>$this->getdriverName() ?? null,
 			'shippment_type'=>($this->shippment_type == 0) ? 'داخلي' : 'خارجي',
 			'orderId_shipping'=>$this->orderId_shipping ?? null,
 			'order_shipping_code'=>$this->order_shipping_code ?? null,
@@ -34,14 +38,31 @@ class OrderResource extends JsonResource
     }
 	private function getTotalPrice()
 {
-    
+
     $totalPrice = 0;
-	
-   
+
+
     foreach ($this->products as $product) {
         $totalPrice += $product->pivot->total_price;
     }
 
     return $totalPrice;
 }
+
+protected function getRepresentativeName()
+{
+    return User::where('id',$this->representative_id)->value('name');
+}
+
+protected function getstoreManagerName()
+{
+    return User::where('id',$this->storeManager_id)->value('name');
+}
+
+protected function getdriverName()
+{
+    return User::where('id',$this->driver_id)->value('name');
+}
+
+
 }
