@@ -27,10 +27,10 @@ class Product extends Model
         return $this->morphOne(File::class, 'fileable');
     }
 
-    public function details()
-    {
-        return $this->hasMany(ProductDetail::class);
-    }
+    // public function details()
+    // {
+    //     return $this->hasMany(ProductDetail::class);
+    // }
 
 
     public function user()
@@ -77,14 +77,9 @@ class Product extends Model
 }
 
 
-// public function variations()
-// {
-//     return $this->belongsToMany(Color::class, 'product_color_size')
-//                 ->withPivot('size_id', 'quantity', 'image_path');
-// }
 public function variations()
 {
-    return $this->hasMany(Variation::class);
+    return $this->hasMany(Item::class);
 }
 
 public function getColorNameAttribute()
@@ -123,8 +118,21 @@ public function updateVariation($size_id, $color_id, $quantity)
         'color_id' => $color_id,
         'quantity' => $quantity,
     ]);
+
+
+
+
+
+
+
+
 }
 
 
+
+public function supplies()
+{
+    return $this->hasMany(Supply::class);
+}
 
 }

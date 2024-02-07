@@ -139,7 +139,7 @@ class OrderController extends Controller
 {
 
     $order = Order::where('appKey',539)->find($id);
-    
+
     if (!$order) {
         return (new ApiResponse(200, __('Id not found'), ['orders'=>[]]))->send();
     }
@@ -175,7 +175,8 @@ try {
 
 		 $user->orders()->save($order);
 
-	foreach ($request->input('products') as $index => $productData) {
+	foreach ($request->input('products') as $index => $productData)
+    {
 		//dd($request->input('products'));
     $productId = $productData['id'];
     $product = Product::find($productId);
@@ -245,7 +246,7 @@ try {
         ],
     ];
 })->toArray();
-
+ 
 
 			 $orderData=[
             'servicePackageId' => 'tosyl-rgaly',
@@ -281,10 +282,11 @@ try {
 
 
 
-        if ($dataOrder && isset($dataOrder['data']['orderId'])) {
+        if ($dataOrder && isset($dataOrder['data']['orderId']))
+         {
 
 			$order->orderId_shipping = $dataOrder['data']['orderId'];
-		$order->client_City= $request->input('client_city');
+		    $order->client_City= $request->input('client_city');
 			$order->save();
 
 

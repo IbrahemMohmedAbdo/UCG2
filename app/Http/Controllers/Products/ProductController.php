@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\addProductRequest;
 use App\Http\Resources\GetProductResource;
 use App\Http\Requests\updateProductRequest;
+use App\Models\Item;
 
 class ProductController extends Controller
 {
@@ -86,6 +87,7 @@ public function getProducts()
 
         DB::transaction(function () use ($product, $validatedData, $request) {
             $this->addVariationsAndMedia($product, $validatedData, $request);
+            $this->createInvoice($product, $validatedData);
         });
 
         if (!$product) {
@@ -153,6 +155,38 @@ private function uploadImage($image)
 }
 
 
+protected function createInvoice($product, $validatedData)
+{
+
+    if (isset($validatedData['colors']) && is_array($validatedData['colors'])) {
+
+        $totalQuantity = array_sum(array_column($validatedData['colors'], 'quantity'));
+
+
+        $originalPrice = isset($validatedData['original_price']) ? $validatedData['original_price'] : null;
+
+
+        $this->createSingleInvoice($product, $originalPrice, $totalQuantity);
+    }
+}
+
+protected function createSingleInvoice($product, $originalPrice, $totalQuantity)
+{
+    // if ($originalPrice !== null) {
+        $invoiceData = [
+            'product_id' => $product->id,
+            'original_price' => $originalPrice,
+            'quantity' => $totalQuantity,
+           'amount'=>$originalPrice?($totalQuantity*$originalPrice):null,
+        ];
+
+        $product->supplies()->create($invoiceData);
+    // }
+}
+
+
+
+
 
 
 
@@ -173,11 +207,14 @@ public function updateProduct(updateProductRequest $request, $id)
 
     $validatedData['user_id'] = $request->user_id ?? $user->id;
 
-    $this->addOrUpdateVariationsAndMedia($product, $validatedData, $request);
-    $product->update($validatedData);
-    $product->load('media');
-    // Refresh the model to get the updated attributes from the database
-    $product->refresh();
+    DB::transaction(function () use ($product, $validatedData, $request) {
+        $this->addOrUpdateVariationsAndMedia($product, $validatedData, $request);
+        $this->updateSupplies($product, $validatedData);
+        $product->update($validatedData);
+        $product->load('media');
+        // Refresh the model to get the updated attributes from the database
+        $product->refresh();
+    });
 
     return (new ApiResponse(200, __('product updated successfully'), ['product' => new ProductResource($product)]))->send();
 }
@@ -187,7 +224,6 @@ protected function addOrUpdateVariationsAndMedia($product, $validatedData, $requ
 	 $video=$request->file('videos');
     if($request->file('videos')){ $this->mediaService->updateOrCreateMedia($product, $video);}
     $this->updateProductVariations($product, $validatedData);
-
 
 }
 protected function updateProductVariations($product, $validatedData)
@@ -248,6 +284,38 @@ private function updateImage($image, $existingFilename = null, $removeExisting =
 }
 
 
+protected function updateSupplies($product, $validatedData)
+{
+    if (array_key_exists('colors', $validatedData)) {
+        $totalQuantityInUpdate = array_sum(array_column($validatedData['colors'], 'quantity'));
+
+        $originalPrice = $validatedData['original_price'];
+        $quantityInVariations = Item::where('product_id', $product->id)->sum('quantity');
+       // dd($quantityInVariations);
+        $totalQuantity=$quantityInVariations+$totalQuantityInUpdate;
+
+        $supply = $product->supplies()->where(['product_id' => $product->id])->first();
+
+        if ($supply) {
+            // Update the existing supply
+            $supply->update([
+                'quantity' => $totalQuantity,
+                'original_price' => $originalPrice,
+                'amount' => $totalQuantity * $originalPrice,
+
+            ]);
+        } else {
+            // Create a new supply
+            $product->supplies()->create([
+                'product_id' => $product->id,
+                'quantity' => $totalQuantity,
+                'original_price' => $originalPrice,
+                'amount' => $totalQuantity * $originalPrice,
+
+            ]);
+        }
+    }
+}
 
 
 

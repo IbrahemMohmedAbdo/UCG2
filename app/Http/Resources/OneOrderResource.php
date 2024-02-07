@@ -18,7 +18,7 @@ class OneOrderResource extends JsonResource
             'id'=>$this->id,
             'client_Name'=>$this->client_name,
             'price' =>  $this->products->sum('pivot.total_price'),
-
+            
           'status'=>$this->status,
 			'created_at'=>$this->created_at,
         ];
