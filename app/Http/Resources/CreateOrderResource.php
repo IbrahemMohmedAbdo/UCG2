@@ -23,7 +23,7 @@ class CreateOrderResource extends JsonResource
 		    'shippment_type'=>($this->shippment_type == 0) ? 'داخلي' : 'خارجي',
 			'created_at'=>$this->created_at,
 			 'total_price' => $this->getTotalPrice(),
-			
+             'total_price_after_discount' => $this->getTotalPriceAfterDiscount() ?? null,
 
           'products'=>OrderProductResource::collection($this->products),
         ];
@@ -40,4 +40,22 @@ private function getTotalPrice()
 
     return $totalPrice;
 }
+
+
+public function getTotalPriceAfterDiscount()
+{
+    // Initialize total price after discount
+    $totalPriceAfterDiscount = 0;
+
+    // Iterate through the products and accumulate total price after discount
+    foreach ($this->products as $product) {
+        $totalPriceAfterDiscount += $product->pivot->total_price_after_discount;
+    }
+
+    return $totalPriceAfterDiscount;
+}
+
+
+
+
 }

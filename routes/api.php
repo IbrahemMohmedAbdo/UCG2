@@ -9,6 +9,7 @@ use App\Http\Controllers\Colors\ColorController;
 use App\Http\Controllers\Orders\OrderController;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use App\Http\Controllers\Profile\ProfileController;
+use App\Http\Controllers\Orders\PromoCodeController;
 use App\Http\Controllers\Products\ProductController;
 use App\Http\Controllers\Categories\CategoryController;
 use App\Http\Controllers\Commisions\CommisionController;
@@ -87,6 +88,11 @@ Route::put('/orders/{id}/returned/{user_id}', [OrderController::class, 'returned
 Route::put('/orders/{id}/postponed/{user_id}', [OrderController::class, 'postponed']);
 Route::post('qrLink/{order}', [OrderController::class, 'createQrLinkAction']);
 Route::delete('Orders/{id}', [OrderController::class, 'delete_order']);
+
+// Promo Code...
+Route::post('/promocodes', [PromoCodeController::class, 'store']);
+Route::delete('/promocodes/{id}', [PromoCodeController::class, 'delete']);
+
 
 
 	// statistics routes...

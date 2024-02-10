@@ -33,11 +33,11 @@ class Order extends Model
         return ucfirst($value);
     }
 
-	
-	
+
+
 public function products()
 {
-    return $this->belongsToMany(Product::class)->withPivot('quantity','total_price','color_id','size_id');
+    return $this->belongsToMany(Product::class)->withPivot('quantity','total_price','color_id','size_id','total_price_after_discount');
 }
 
 public function user()
@@ -45,7 +45,10 @@ public function user()
     return $this->belongsTo(User::class);
 }
 
-
+public function promoCode()
+{
+    return $this->belongsTo(PromoCode::class);
+}
 
 
 

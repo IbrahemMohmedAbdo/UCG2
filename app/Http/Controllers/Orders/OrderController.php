@@ -17,6 +17,7 @@ use App\Http\Requests\OrderStoreRequest;
 use App\Http\Resources\OneOrderResource;
 use App\Http\Resources\CreateOrderResource;
 use App\Http\Resources\StatusOrderResource;
+use App\Models\PromoCode;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use App\Services\ThirdPartyApiService;
@@ -169,6 +170,7 @@ try {
 		'client_Cuurent_City' => $request->input('client_cuurent_city'),
         'representative_Id' => $request->input('representative_Id') ?? $user->id,
 		'shippment_type'=> $request->input('shippment_type'),
+        'promo_code_name'=> $request->input('promo_code_name') ?? null,
         'appKey'=>539,
 
     ]);
@@ -177,23 +179,51 @@ try {
 
 	foreach ($request->input('products') as $index => $productData)
     {
-		//dd($request->input('products'));
+
     $productId = $productData['id'];
     $product = Product::find($productId);
 
     $price = $product->price;
+    $originalPrice=$product->original_price;
 
 		$quantity=$product->variations()->where('size_id', $request->input('variations')[ $index]['size_id'])
 			->where('color_id', $request->input('variations')[ $index]['color_id'])->pluck('quantity')->toArray();
 
 		$totalQuantity = $price* $request->input('variations')[ $index]['quantity'];
-		$order->products()->attach($productId, [
-            'size_id' => $request->input('variations')[ $index]['size_id'],
-            'color_id' => $request->input('variations')[ $index]['color_id'],
-            'quantity' => $request->input('variations')[ $index]['quantity'],
-            'total_price' => $totalQuantity,
-        ]);
 
+        $promoCodeName = $request->input('promo_code_name');
+        $promoCode = PromoCode::where('name', $promoCodeName)
+        ->where('valid', 0)
+        ->first();
+
+        if ($promoCode) {
+            $discountAmount = $promoCode->value;
+            $totalPriceAfterDiscount = ((100 - $discountAmount) / 100) * $totalQuantity;
+
+
+            $order->products()->attach($productId, [
+                'size_id' => $request->input('variations')[ $index]['size_id'],
+                'color_id' => $request->input('variations')[ $index]['color_id'],
+                'quantity' => $request->input('variations')[ $index]['quantity'],
+                'total_price' => $totalQuantity,
+                'total_price_after_discount'=>$totalPriceAfterDiscount,
+
+            ]);
+
+            // Update promoCode valid status to 1
+            $promoCode->update(['valid' => 1]);
+
+        }
+        elseif($promoCode == null || $promoCode->valid == 1){
+
+            $order->products()->attach($productId, [
+                'size_id' => $request->input('variations')[ $index]['size_id'],
+                'color_id' => $request->input('variations')[ $index]['color_id'],
+                'quantity' => $request->input('variations')[ $index]['quantity'],
+                'total_price' => $totalQuantity,
+            ]);
+
+        }
 
         $product->variations()
 			->where('product_id',$productId)
@@ -201,14 +231,20 @@ try {
 			->where('color_id', $request->input('variations')[ $index]['color_id'])
             ->update(['quantity' => \DB::raw($quantity[0]-($request->input('variations')[ $index]['quantity']))]);
 
+
+
+    $productQunatityInOrder=$request->input('variations')[ $index]['quantity'];
+
+    $invoiceData = [
+        'product_id' => $product,
+        'original_price' => $originalPrice,
+        'quantity' => $productQunatityInOrder,
+       'amount'=>$originalPrice?($productQunatityInOrder*$originalPrice):null,
+    ];
+
+    $product->supplies()->create($invoiceData);
+
     }
-
-
-
-
-
-
-
 
 		if ($order->shippment_type == 1) {
     $authInfo = [
@@ -246,7 +282,7 @@ try {
         ],
     ];
 })->toArray();
- 
+
 
 			 $orderData=[
             'servicePackageId' => 'tosyl-rgaly',

@@ -172,7 +172,7 @@ protected function createInvoice($product, $validatedData)
 
 protected function createSingleInvoice($product, $originalPrice, $totalQuantity)
 {
-    // if ($originalPrice !== null) {
+
         $invoiceData = [
             'product_id' => $product->id,
             'original_price' => $originalPrice,
@@ -181,7 +181,7 @@ protected function createSingleInvoice($product, $originalPrice, $totalQuantity)
         ];
 
         $product->supplies()->create($invoiceData);
-    // }
+
 }
 
 
@@ -296,15 +296,15 @@ protected function updateSupplies($product, $validatedData)
 
         $supply = $product->supplies()->where(['product_id' => $product->id])->first();
 
-        if ($supply) {
-            // Update the existing supply
-            $supply->update([
-                'quantity' => $totalQuantity,
-                'original_price' => $originalPrice,
-                'amount' => $totalQuantity * $originalPrice,
+        // if ($supply) {
+        //     // Update the existing supply
+        //     $supply->update([
+        //         'quantity' => $totalQuantity,
+        //         'original_price' => $originalPrice,
+        //         'amount' => $totalQuantity * $originalPrice,
 
-            ]);
-        } else {
+        //     ]);
+        // } else {
             // Create a new supply
             $product->supplies()->create([
                 'product_id' => $product->id,
@@ -313,7 +313,7 @@ protected function updateSupplies($product, $validatedData)
                 'amount' => $totalQuantity * $originalPrice,
 
             ]);
-        }
+        //}
     }
 }
 
