@@ -56,11 +56,17 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('updateCommissions/{id}', [CommisionController::class, 'update']);
 
 	    // permissions and roles...
+// to get all permissions..
     Route::get('allPermissions',[PermissionController::class, 'allPermission']);
+// get all roles..
     Route::get('allRoles',[PermissionController::class, 'allRoles']);
-    Route::get('roles/{role}/permissions', [PermissionController::class, 'permissionsForRole']);
+// get all permissions for role..
+    Route::get('roles/{role}/permissions', [PermissionController::class,
+ 'permissionsForRole']);
+// to update role permissions..
     Route::put('roles/{role}/permissions', [PermissionController::class, 'updateRolePermissions']);
 	 Route::delete('roles/{role}/permissions', [PermissionController::class, 'deleteRolePermissions']);
+//create role..
 	 Route::post('createRole', [PermissionController::class, 'createRoleWithPermissions']);
 	 Route::delete('admin/roles/{roleId}', [PermissionController::class, 'deleteRole']);
 
